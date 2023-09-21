@@ -147,8 +147,38 @@ Notation "'while' b 'do' s 'end'" := (SWhile b s)
 Reserved Notation "⟨ x , y ⟩ ⇒ z"
   (at level 40, y custom stm at level 99, x constr at level 99, z constr at level 98).
 
+(** Operational semantics of "While" *)
 Inductive stm_R : stm -> while_state -> while_state -> Prop :=
-  | SAsgn_R (s : while_state) (x : string) (a : aexp) (n : nat) :
-      ⟦a⟧s ⇒ n ->
+  | SAsgn_R s x a n :
+               ⟦a⟧s ⇒ n ->
+    (*───────────────────────────────*)
       ⟨<{x := a}>, s⟩ ⇒ (x ↦ n ; s)
+  | SSkip_R s :
+    (*─────────────────*)
+      ⟨<{skip}>, s⟩ ⇒ s
+  | SSeq_R s s' s'' S1 S2 :
+       ⟨<{S1}>, s⟩ ⇒ s' ->
+      ⟨<{S2}>, s'⟩ ⇒ s'' ->
+    (*──────────────────────*)
+      ⟨<{S1; S2}>, s⟩ ⇒ s''
+  | SIf_R_True s s' b S1 S2 :
+                  ⟦b⟧s ⇒ true ->
+               ⟨<{S1}>, s⟩ ⇒ s' ->
+    (*───────────────────────────────────────*)
+      ⟨<{if b then S1 else S2 end}>, s⟩ ⇒ s'
+  | SIf_R_False s s' b S1 S2 :
+                  ⟦b⟧s ⇒ false ->
+               ⟨<{S2}>, s⟩ ⇒ s' ->
+    (*───────────────────────────────────────*)
+      ⟨<{if b then S1 else S2 end}>, s⟩ ⇒ s'
+  | SWhile_R_True s s' s'' b S :
+                 ⟦b⟧s ⇒ true ->
+               ⟨<{S}>, s⟩ ⇒ s' ->
+      ⟨<{while b do S end}>, s'⟩ ⇒ s'' ->
+    (*────────────────────────────────────*)
+         ⟨<{while b do S end}>, s⟩ ⇒ s''
+  | SWhile_R_False s b S :
+            ⟦b⟧s ⇒ false ->
+  (*──────────────────────────────*)
+    ⟨<{while b do S end}>, s⟩ ⇒ s
 where "⟨ stm , st ⟩ ⇒ st'" := (stm_R stm st st').
